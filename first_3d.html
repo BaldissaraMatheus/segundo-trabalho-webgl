@@ -126,12 +126,16 @@ sob a licença acima especificada.
         program,
 
         //Define o vetor de translação em z
-        translationVector = [0.0,0.0,-10.0],
+        translationVector = [0.0,0.0,-20.0],
         //Define um vetor com ângulos de rotação em cada um dos eixos (x,y,z)
         rotationVector = [0.0,0.0,0.0],
         //Define o vetor para rotação da cabeça
         headRotationVector = [15.0,10.0,5.0],
         hipRotationVector =  [-15.0,10.0,0.0],
+        frontRightLegRotationVector =  [10.0,0.0,0.0],
+        frontLeftLegRotationVector =  [10.0,0.0,0.0],
+        backRightLegRotationVector =  [10.0,0.0,0.0],
+        backLeftLegRotationVector =  [10.0,0.0,0.0],
         //Criar a matriz de camera e modelagem 4x4
         modelViewMatrix,
         //Cria a matriz de projeção 4x4
@@ -280,7 +284,7 @@ sob a licença acima especificada.
       myMatrixStack = new MyStack();
     
       cube = new MyCube(program,gl,undefined);
-      mouse = new Mouse(program,gl,hipRotationVector,headRotationVector);
+      mouse = new Mouse(program,gl,hipRotationVector,headRotationVector,frontRightLegRotationVector,frontLeftLegRotationVector,backRightLegRotationVector,backRightLegRotationVector);
 
       //
       var tv = vec3.create();
@@ -435,9 +439,80 @@ sob a licença acima especificada.
             }
           };
           return result;
-        }, {})
+        }, {}),
 
+        ...['Rotate Front Right Leg X', 'Rotate Front Right Leg Y', 'Rotate Front Right Leg Z'].reduce((result, name, i) => {
+          result[name] = {
+            value: frontRightLegRotationVector[i],
+            min: -45, max: 45, step: 0.000001,
+            onChange(v, state) {
+              frontRightLegRotationVector = [
+                state['Rotate Front Right Leg X'],
+                state['Rotate Front Right Leg Y'],
+                state['Rotate Front Right Leg Z']
+              ];
+              mouse.frontRightLegRotationVector = frontRightLegRotationVector;
+              render();  
+
+            }
+          };
+          return result;
+        }, {}),
+
+        ...['Rotate Front Left Leg X', 'Rotate Front Left Leg Y', 'Rotate Front Left Leg Z'].reduce((result, name, i) => {
+          result[name] = {
+            value: frontLeftLegRotationVector[i],
+            min: -45, max: 45, step: 0.000001,
+            onChange(v, state) {
+              og({v, state})
+              frontLeftLegRotationVector = [
+                state['Rotate Front Left Leg X'],
+                state['Rotate Front Left Leg Y'],
+                state['Rotate Front Left Leg Z']
+              ];
+              mouse.frontLeftLegRotationVector = frontLeftLegRotationVector;
+              render();  
+
+            }
+          };
+          return result;
+        }, {}),
+
+        ...['Rotate Back Right Leg X', 'Rotate Back Right Leg Y', 'Rotate Back Right Leg Z'].reduce((result, name, i) => {
+          result[name] = {
+            value: backRightLegRotationVector[i],
+            min: -45, max: 45, step: 0.000001,
+            onChange(v, state) {
+              backRightLegRotationVector = [
+                state['Rotate Back Right Leg X'],
+                state['Rotate Back Right Leg Y'],
+                state['Rotate Back Right Leg Z']
+              ];
+              mouse.backRightLegRotationVector = backRightLegRotationVector;
+              render();  
+
+            }
+          };
+          return result;
+        }, {}),
    
+        ...['Rotate Back Left Leg X', 'Rotate Back Left Leg Y', 'Rotate Back Left Leg Z'].reduce((result, name, i) => {
+          result[name] = {
+            value: backLeftLegRotationVector[i],
+            min: -45, max: 45, step: 0.000001,
+            onChange(v, state) {
+              backLeftLegRotationVector = [
+                state['Rotate Back Left Leg X'],
+                state['Rotate Back Left Leg Y'],
+                state['Rotate Back Left Leg Z']
+              ];
+              mouse.backLeftLegRotationVector = backLeftLegRotationVector;
+              render();  
+
+            }
+          };
+          return result;
+        }, {}),
       })
     }
   </script>
