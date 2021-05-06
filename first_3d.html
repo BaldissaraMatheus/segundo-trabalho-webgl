@@ -48,74 +48,65 @@ sob a licença acima especificada.
   <!-- vertex shader -->
   <script id="vertex-shader" type="x-shader/x-vertex">
     #version 300 es
-    precision mediump float;
-    in vec3 aVertexPosition;
-    in vec3 aVertexColor;
-    in vec3 aVertexNormal;
-    //in vec2 aTextureCoordinate;
-
-    smooth out vec4 vColor;
-    //out vec2 vTextureCoordinate;
-    uniform mat4 uModelViewMatrix;
-    uniform mat4 uNormalMatrix;
-    uniform mat4 uProjectionMatrix;
-
-    uniform vec3 uLightPosition;
-    uniform vec4 uLightAmbient;
-    uniform vec4 uLightDiffuse;
-  
-    uniform vec4 uMaterialDiffuse;
-    uniform bool uWireframe;
-
-    void main(void) {
-      // If wireframe is enabled, set color to the diffuse property exclusing lights
-      if (uWireframe) {
-        vColor = uMaterialDiffuse;
+    precision highp float;
+    
+    in vec3 position;
+    in vec2 texcoord;
+    in vec3 normal;
+    
+    uniform mat4 projection;
+    uniform mat4 modelview;
+    uniform mat4 normalMat;
+    uniform vec3 lightDirection;
+    uniform int mode;
+    
+    out vec4 forFragColor;
+    
+    const vec4 ambientColor = vec4(0.094, 0.0, 0.0, 1.0);
+    const vec4 diffuseColor = vec4(0.5, 0.0, 0.0, 1.0);
+    const vec4 specularColor = vec4(1.0, 1.0, 1.0, 1.0);
+    const float shininess = 20.0;
+    const vec4 lightColor = vec4(1.0, 1.0, 1.0, 1.0);
+    
+    vec3 phongBRDF(vec3 lightDir, vec3 viewDir, vec3 normal, vec3 phongDiffuseCol, vec3 phongSpecularCol, float phongShininess) {
+      vec3 color = phongDiffuseCol;
+      vec3 reflectDir = reflect(-lightDir, normal);
+      float specDot = max(dot(reflectDir, viewDir), 0.0);
+      color += pow(specDot, phongShininess) * phongSpecularCol;
+      return color;
+    }
+    
+    void main(){
+        
+      vec4 vertPos4 = modelview * vec4(position, 1.0);
+      vec3 vertPos = vec3(vertPos4) / vertPos4.w;
+      vec3 n = vec3(normalMat * vec4(normal, 0.0));
+    
+      vec3 lightDir = normalize(-lightDirection);
+      vec3 viewDir = normalize(-vertPos);
+    
+      vec3 luminance = ambientColor.rgb;
+      
+      float illuminance = dot(lightDir, n);
+      if(illuminance > 0.0) {
+        vec3 brdf = phongBRDF(lightDir, viewDir, n, diffuseColor.rgb, specularColor.rgb, shininess);
+        luminance += brdf * illuminance * lightColor.rgb;
       }
-      else {
-        // Normal
-        vec4 color = vec4(aVertexColor,1.0);
-        vec3 N = vec3(uNormalMatrix * vec4(aVertexNormal, 0.0));
-        // normalize normal after normal transform
-        N = normalize(N);
-        // Normalized light position
-        vec3 L = normalize(-uLightPosition);
-        float lambertTerm = dot(N, -L);
-
-        if (lambertTerm == 0.0) {
-          lambertTerm = 0.01;
-        }
-
-        // Ambient
-        vec4 Ia = uLightAmbient;
-        // Diffuse
-        vec4 Id = color * uLightDiffuse * lambertTerm;
-
-        // Set varying to be used inside of fragment shader
-        vColor = vec4(vec3(Ia + Id), 1.0);
-      }
-      gl_PointSize = 4.0;
-      gl_Position = uProjectionMatrix * uModelViewMatrix * vec4(aVertexPosition, 1.0);
-     }
-
-
- 
+      forFragColor = vec4(luminance, 1.0);
+      gl_Position = projection * modelview * vec4(position, 1.0);
+    }
   </script>
 
   <!-- fragment shader -->
   <script id="fragment-shader" type="x-shader/x-fragment">
     #version 300 es
-    precision mediump float;
-    in vec4 vColor;
-    //in vec2 vTextureCoordinate;
-    out vec4 fragColor;
-
-    // The texture.
-    // uniform sampler2D uTexture;
-
-    void main(void) {
-      //fragColor = texture(uTexture,vTextureCoordinate);
-      fragColor = vColor;
+    precision highp float; 
+    out vec4 outColor;
+    
+    in vec4 forFragColor;
+    
+    void main() {
+      outColor = forFragColor;
     }
   </script>
 
@@ -193,21 +184,13 @@ sob a licença acima especificada.
 
       gl.useProgram(program);
 
-      program.aVertexPosition = gl.getAttribLocation(program, 'aVertexPosition');
-      program.aVertexColor = gl.getAttribLocation(program,'aVertexColor');
-      program.aVertexNormal = gl.getAttribLocation(program, 'aVertexNormal');
-
-      program.uModelViewMatrix = gl.getUniformLocation(program, 'uModelViewMatrix');
-      program.uNormalMatrix = gl.getUniformLocation(program, 'uNormalMatrix');
-      program.uProjectionMatrix = gl.getUniformLocation(program, 'uProjectionMatrix');
-
-      //program.aTextureCoordinate = gl.getAttribLocation(program, 'aTextureCoordinate');
-
-      program.uLightPosition = gl.getUniformLocation(program, 'uLightPosition');
-      program.uLightAmbient = gl.getUniformLocation(program, 'uLightAmbient'); 
-      program.uLightDiffuse = gl.getUniformLocation(program, 'uLightDiffuse'); 
-      program.uMaterialDiffuse = gl.getUniformLocation(program, 'uMaterialDiffuse');
-      program.uWireframe = gl.getUniformLocation(program, 'uWireframe');
+      program.aVertexPosition = gl.getAttribLocation(program, 'position');
+      program.aVertexColor = gl.getAttribLocation(program,'color');
+      program.aVertexNormal = gl.getAttribLocation(program, 'normal');
+      program.uModelViewMatrix = gl.getUniformLocation(program, 'modelview');
+      program.uNormalMatrix = gl.getUniformLocation(program, 'normalMat');
+      program.uProjectionMatrix = gl.getUniformLocation(program, 'projection');
+      program.uLightPosition = gl.getUniformLocation(program, 'lightDirection');
 
     }
 
